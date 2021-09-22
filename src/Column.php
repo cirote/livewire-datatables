@@ -9,6 +9,7 @@ class Column
 {
     public $type = 'string';
     public $label;
+    public $group;
     public $name;
     public $select;
     public $joins;
@@ -17,6 +18,7 @@ class Column
     public $searchable;
     public $filterOn;
     public $filterable;
+    public $hideable;
     public $sort;
     public $unsortable;
     public $defaultSort;
@@ -31,6 +33,9 @@ class Column
     public $preventExport;
     public $width;
     public $exportCallback;
+
+    /** @var array list all column types that are not sortable by SQL here */
+    public const UNSORTABLE_TYPES = ['label', 'checkbox'];
 
     public static function name($name)
     {
@@ -114,6 +119,13 @@ class Column
     public function defaultSort($direction = true)
     {
         $this->defaultSort = $direction;
+
+        return $this;
+    }
+
+    public function hideable()
+    {
+        $this->hideable = true;
 
         return $this;
     }
@@ -320,6 +332,16 @@ class Column
     public function field()
     {
         return Str::afterLast($this->name, '.');
+    }
+
+    /**
+     * You can use group(null) to revoke a column from a group, if necessary.
+     */
+    public function group($group)
+    {
+        $this->group = $group;
+
+        return $this;
     }
 
     public function relations()

@@ -98,14 +98,12 @@ somewhere in your CSS
 ### Provide a datasource by declaring public property ```$model``` **OR** public method ```builder()``` that returns an instance of ```Illuminate\Database\Eloquent\Builder```
 > ```php artisan livewire:datatable users-table --model=user``` --> 'app/Http/Livewire/UsersTable.php' with ```public $model = User::class```
 
-
 ### Declare a public method ```columns``` that returns an array containing one or more ```Mediconesystems\LivewireDatatables\Column```
 
 
 ## Columns
 Columns can be built using any of the static methods below, and then their attributes assigned using fluent method chains.
 There are additional specific types of Column; ```NumberColumn```, ```DateColumn```, ```TimeColumn```, using the correct one for your datatype will enable type-specific formatting and filtering:
-
 
 | Class | Description |
 |---|---|
@@ -114,6 +112,7 @@ There are additional specific types of Column; ```NumberColumn```, ```DateColumn
 |BooleanColumn| Values will be automatically formatted to a yes/no icon, filters will be yes/no|
 |DateColumn| Values will be automatically formatted to the default date format. Filters will be a date range|
 |TimeColumn| Values will be automatically formatted to the default time format. Filters will be a time range|
+|LabelColumn| Fixed header string ("label") with fixed content string in every row. No SQL is executed at all|
 ___
 
 ```php
@@ -139,18 +138,27 @@ class ComplexDemoTable extends LivewireDatatable
 
             Column::name('name')
                 ->defaultSort('asc')
+                ->group('group1')
                 ->searchable()
+                ->hideable()
                 ->filterable(),
 
             Column::name('planet.name')
                 ->label('Planet')
+                ->group('group1')
                 ->searchable()
+                ->hideable()
                 ->filterable($this->planets),
 
             DateColumn::name('dob')
                 ->label('DOB')
+                ->group('group2')
                 ->filterable()
-                ->hide()
+                ->hide(),
+
+            (new LabelColumn())
+                ->label('My custom heading')
+                ->content('This fixed string appears in every row')
         ];
     }
 }
@@ -166,6 +174,7 @@ class ComplexDemoTable extends LivewireDatatable
 |_static_ **delete**|[*String* $primaryKey default: 'id']|Adds a column with a delete button, which will call ```$this->model::destroy($primaryKey)```|```Column::delete()```|
 |_static_ **checkbox**|[*String* $column default: 'id']|Adds a column with a checkbox. The component public property ```$selected``` will contain an array of the named column from checked rows, |```Column::checkbox()```|
 |**label**|*String* $name|Changes the display name of a column|```Column::name('id')->label('ID)```|
+|**group**|*String* $group|Assign the column to a group. Allows to toggle the visibility of all columns of a group at once|```Column::name('id')->group('my-group')```|
 |**format**|[*String* $format]|Formats the column value according to type. Dates/times will use the default format or the argument |```Column::name('email_verified_at')->filterable(),```|
 |**hide**| |Marks column to start as hidden|```Column::name('id')->hidden()```|
 |**sortBy**|*String\|Expression* $column|Changes the query by which the column is sorted|```Column::name('dob')->sortBy('DATE_FORMAT(users.dob, "%m%d%Y")'),```|
@@ -175,6 +184,7 @@ class ComplexDemoTable extends LivewireDatatable
 |**round**|[*Integer* $precision (default: 0)]|Rounds value to given precision|```Column::name('age')->round()```|
 |**defaultSort**|[*String* $direction (default: 'desc')]|Marks the column as the default search column|```Column::name('name')->defaultSort('asc')```|
 |**searchable**| |Includes the column in the global search|```Column::name('name')->searchable()```|
+|**hideable**| |The user is able to toggle the visibility of this column|```Column::name('name')->hideable()```|
 |**filterable**|[*Array* $options], [*String* $filterScope]|Adds a filter to the column, according to Column type. If an array of options is passed it wil be used to populate a select input. If the column is a scope column then the name of the filter scope must also be passed|```Column::name('allegiance')->filterable(['Rebellion', 'Empire'])```|
 |**filterOn**|*String/Array* $statement|Allows you to specify a column name or sql statement upon which to perform the filter (must use SQL syntax, not Eloquent eg. ```'users.name'``` instead of ```'user.name'```). Useful if using a callback to modify the displayed values. Can pass a single string or array of strings which will be combined with ```OR```|```Column::callback(['name', 'allegiance'], function ($name, $allegiance) { return "$name is allied to $allegiance"; })->filterable(['Rebellion', 'Empire'])->filterOn('users.allegiance')```|
 |**view**|*String* $viewName| Passes the column value, whole row of values, and any additional parameters to a view template | _(see below)_|
@@ -202,6 +212,10 @@ NumberColumn::name('students.age:min')->label('Student Min'),
 
 NumberColumn::name('students.age:max')->label('Student Max'),
 ```
+
+### Column Groups
+
+When you have a very big table with a lot of columns, it is possible to create 'column groups' that allows the user to toggle the visibility of a whole group at once. Use `->group('NAME')` at any column to achieve this.
 
 ### Custom column names
 It is still possible to take full control over your table, you can define a ```builder``` method using whatever query you like, using your own joins, groups whatever, and then name your columns using your normal SQL syntax:
@@ -434,6 +448,8 @@ public function cellClasses($row, $column)
     return 'text-sm ' . ($this->rowIsSelected($row) ? ' text-gray-900' : ($row->{'car.model'} === 'Ferrari' ? ' text-white' : ' text-gray-900'));
 }
 ```
+
+You can change the default CSS classes applied by the ```rowClasses``` and the ```cellClasses``` methods by changing ```default_classes``` in the ```livewire-datatables.php``` config file.
 
 You could also override the render method in your table's class to provide different templates for different tables.
 

@@ -30,7 +30,7 @@
                 <span class="text-xl text-blue-400 uppercase">FILTERS ACTIVE</span>
             @endif
 
-            <div class="flex items-center space-x-1">
+            <div class="flex flex-wrap items-center space-x-1">
                 <x-icons.cog wire:loading class="h-9 w-9 animate-spin text-gray-400" />
 
                 @if($this->activeFilters)
@@ -51,16 +51,23 @@
                 @if($hideable === 'select')
                 @include('datatables::hide-column-multiselect')
                 @endif
+
+                @foreach ($columnGroups as $name => $group)
+                    <button wire:click="toggleGroup('{{ $name }}')" class="px-3 py-2 border border-green-400 rounded-md bg-white text-green-500 text-xs leading-4 font-medium uppercase tracking-wider hover:bg-green-200 focus:outline-none"><span class="flex items-center h-5">{{ __('Toggle :group', ['group' => $name]) }}</span>
+                        </button>
+                @endforeach
             </div>
         </div>
 
         @if($hideable === 'buttons')
         <div class="p-2 grid grid-cols-8 gap-2">
             @foreach($this->columns as $index => $column)
-            <button wire:click.prefetch="toggle('{{ $index }}')" class="px-3 py-2 rounded text-white text-xs focus:outline-none
-            {{ $column['hidden'] ? 'bg-blue-100 hover:bg-blue-300 text-blue-600' : 'bg-blue-500 hover:bg-blue-800' }}">
-                {{ $column['label'] }}
-            </button>
+                @if ($column['hideable'])
+                    <button wire:click.prefetch="toggle('{{ $index }}')" class="px-3 py-2 rounded text-white text-xs focus:outline-none
+                    {{ $column['hidden'] ? 'bg-blue-100 hover:bg-blue-300 text-blue-600' : 'bg-blue-500 hover:bg-blue-800' }}">
+                        {{ $column['label'] }}
+                    </button>
+            @endif
             @endforeach
         </div>
         @endif
@@ -100,6 +107,10 @@
                                         <input type="checkbox" wire:click="toggleSelectAll" @if(count($selected) === $this->results->total()) checked @endif class="form-checkbox mt-1 h-4 w-4 text-blue-600 transition duration-150 ease-in-out" />
                                     </div>
                                 </div>
+                            @elseif($column['type'] === 'label')
+                                <div class="table-cell overflow-hidden align-top">
+                                    {{ $column['label'] ?? '' }}
+                                </div>
                             @else
                                 <div class="table-cell overflow-hidden align-top">
                                     @isset($column['filterable'])
@@ -127,6 +138,8 @@
                                     @endif
                                 @elseif($column['type'] === 'checkbox')
                                     @include('datatables::checkbox', ['value' => $row->checkbox_attribute])
+                                @elseif($column['type'] === 'label')
+                                    @include('datatables::label')
                                 @else
                                     <div class="table-cell px-6 py-2 whitespace-no-wrap @if($column['align'] === 'right') text-right @elseif($column['align'] === 'center') text-center @else text-left @endif {{ $this->cellClasses($row, $column) }}">
                                         {!! $row->{$column['name']} !!}
